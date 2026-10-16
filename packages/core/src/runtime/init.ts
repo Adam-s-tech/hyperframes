@@ -10,6 +10,7 @@ import {
   CLIP_HIDDEN_ATTR,
   revealTimedClipsAfterFirstPass,
   SKIPPED_CLIP,
+  showHiddenClips,
   skipsHiddenImages,
 } from "./timedClipHide";
 import {
@@ -4235,6 +4236,7 @@ export function initSandboxRuntimeModular(): void {
   // Reuse a completed seek only for the exact requested time and captured timeline.
   // Paused players and host ticks can share the frame without suppressing a newer time.
   let lastTransportSeekTime = Number.NaN;
+  let tweensRenderedThrough = { revision: Number.NaN, time: Number.NEGATIVE_INFINITY };
   let lastTransportSeekTimeline: RuntimeTimelineLike | null = null;
   let pausedSeekDeferredByManualGesture = false;
   // Set while the transport is parked (see scheduleNextTransportFrame).
@@ -4394,6 +4396,12 @@ export function initSandboxRuntimeModular(): void {
     opts?: { activateChildren?: boolean; suppressEvents?: boolean },
   ): () => Animation[] {
     const suppressEvents = opts?.suppressEvents === true;
+    const revision = readCompositionTimingRevision();
+    if (revision !== tweensRenderedThrough.revision)
+      tweensRenderedThrough = { revision, time: Number.NEGATIVE_INFINITY };
+    const jumped = !(Math.abs(t - lastTransportSeekTime) <= 1.5 / state.canonicalFps);
+    const firstRenders = jumped && t > tweensRenderedThrough.time;
+    const hideClipsAgain = firstRenders ? showHiddenClips() : null;
     if (tl) {
       // #10: when data-duration exceeds the timeline's intrinsic length the
       // engine requests frames past the last tween. Seeking a paused GSAP
@@ -4442,6 +4450,8 @@ export function initSandboxRuntimeModular(): void {
     // the deterministic adapters, syncTimedElementVisibility, the hf-timelines-built
     // handler and __hfReseekGpu. It only ever moved the state the seek left behind.
     seekStandaloneRegisteredTimelines(t, opts);
+    hideClipsAgain?.();
+    tweensRenderedThrough.time = Math.max(tweensRenderedThrough.time, t);
     const pageAnimations = pageAnimationsForOnePass();
     for (const adapter of state.deterministicAdapters) {
       if (adapter.name === "gsap" && tl) continue;
