@@ -44,6 +44,12 @@
       "import": "./src/telemetryRedaction.ts",
       "types": "./src/telemetryRedaction.ts"
     },
+    "./distributed-fps": {
+      "bun": "./src/distributedFps.ts",
+      "node": "./dist/distributedFps.js",
+      "import": "./src/distributedFps.ts",
+      "types": "./src/distributedFps.ts"
+    },
     "./beats": {
       "bun": "./src/beats/index.ts",
       "node": "./dist/beats/index.js",
@@ -559,6 +565,10 @@
       "./telemetry-redaction": {
         "import": "./dist/telemetryRedaction.js",
         "types": "./dist/telemetryRedaction.d.ts"
+      },
+      "./distributed-fps": {
+        "import": "./dist/distributedFps.js",
+        "types": "./dist/distributedFps.d.ts"
       },
       "./beats": {
         "import": "./dist/beats/index.js",
